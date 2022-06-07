@@ -1,0 +1,20 @@
+{
+    "name": "presir/php-mini",
+    "type": "project",
+    "description": "The PHPMini micro-framework",
+    "keywords": ["PHPMini", "framework"],
+    "require": {
+        "phpmailer/phpmailer": "^6.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Router\\": "routes/",
+            "App\\": "app/",
+            "Database\\": "database/"
+        }
+    },
+    "authors": [{
+        "name": "Fernand Tatchum",
+        "email": "tatchumf@gmail.com"
+    }]
+}
