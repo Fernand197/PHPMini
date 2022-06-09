@@ -57,7 +57,7 @@ class Route
             $model = ucfirst($key);
             $parameters = [];
             $model = "App\\Models\\$model";
-            $parameters[] = $model::find($value);
+            $parameters[] = $model::findOrFail($value);
         }
         // var_dump($parameters) or die;
         $params = array_merge($params, $parameters);

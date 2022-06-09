@@ -2,39 +2,62 @@
 
 namespace App\Models;
 
+use Closure;
 use Database\DBConnection;
+use Exception;
 use PDO;
 
 class Model
 {
 
     protected static $db;
-    static protected $table;
+    protected static $table;
+    protected static $primaryKey = "id";
     protected static $sql;
+    protected static $params = [];
 
     public function __construct()
     {
-        self::$db = new DBConnection(DB, DB_NAME, DB_HOST, DB_USER, DB_PWD);
+        static::$db = new DBConnection(DB, DB_NAME, DB_HOST, DB_USER, DB_PWD);
+    }
+
+    public static function getInstance()
+    {
+        return new static();
     }
 
     // select all data tables
-    public static function all(): array
+    public static function all(array $columns = ["*"]): array
     {
-        self::$sql =  "SELECT * FROM " . static::$table;
-        return self::query();
+        $columns = implode(',', $columns);
+        static::$sql =  "SELECT $columns FROM " . static::$table;
+        return static::query();
     }
 
-    public static function lastId()
+    public static function lastInsert()
     {
-        return static::$db->getPDO()->lastInsertId();
+        $id = static::$db->getPDO()->lastInsertId();
+        return static::findOrFail($id);
     }
 
     // select a row of table using id field
-    public static function find(int $id)
+    public static function find($id, array $columns = ['*'])
     {
-        self::$sql = "SELECT * FROM " . static::$table . " WHERE id = ?";
-        return self::query([$id], true);
+        $columns = implode(",", $columns);
+        static::$sql = "SELECT $columns FROM " . static::$table . " WHERE " . static::$primaryKey . " = ?";
+        static::$params = [$id];
+        return static::query(true);
     }
+
+    public static function findOrFail(int $id, array $columns = ['*'])
+    {
+        $result = static::find($id, $columns);
+        if (is_null($result)) {
+            throw new Exception("Model " . static::class . " not fount");
+        }
+        return $result;
+    }
+
 
     // insert an instance in database
     public static function create(array $data)
@@ -48,24 +71,82 @@ class Model
             $values .= ":{$key}{$comma}"; // set their value
             $i++;
         }
-        self::$sql = "INSERT INTO " . static::$table . " ($fields) VALUES ($values)";
+        static::$sql = "INSERT INTO " . static::$table . " ($fields) VALUES ($values)";
+        static::$params = $data;
+        static::query(true);
+        return static::lastInsert();
+    }
 
-        return self::query($data);
+    public function first(array $columns = ['*'])
+    {
+        return static::query(true);
+    }
+
+    public function firstOrFail(array $columns = ['*'])
+    {
+        $result = $this->first($columns);
+        if (empty($result)) {
+            throw new Exception("Model " . static::class . " not fount");
+        }
+        return $result;
+    }
+
+    public function get(array $columns = ['*']): array
+    {
+        return static::query();
     }
 
     public function oderBy(string $column, string $dir = "asc")
     {
-        self::$sql .= " ORDER BY $column $dir";
-        return self::query();
+        static::$sql .= " ORDER BY $column $dir";
+        return static::query();
     }
 
-    public static function __callStatic(string $name, array $parameters)
+    public static function firstOrCreate(array $attributes = [], array $values = [])
     {
-        $name = "static_" . $name;
-        return call_user_func_array($name, $parameters);
+        $result = static::where($attributes)->first();
+        if (is_null($result)) {
+            $result = static::create(array_merge($attributes, $values));
+        }
+        return $result;
     }
 
-    public function update($data)
+    public static function updateOrCreate(array $attributes = [], array $values = [])
+    {
+        $result = static::where($attributes)->first();
+        if ($result) {
+            $result = $result->update($values);
+        } else {
+            $result = static::create(array_merge($attributes, $values));
+        }
+        return $result;
+    }
+
+    public function firstOr($columns = ['*'], Closure $callback = null)
+    {
+        $result = $this->first();
+        if ($result) {
+            return $result;
+        }
+        if (is_callable($columns)) {
+            return call_user_func_array($columns, []);
+        }
+        return call_user_func_array($callback, []);
+    }
+
+    public static function destroy($ids): bool
+    {
+        if (is_array($ids)) {
+            $ids = implode(",", $ids);
+            static::$sql = "DELETE FROM " . static::$table . " WHERE " . static::$primaryKey . " IN ($ids)";
+            return static::query();
+        }
+        static::$sql = "DELETE FROM " . static::$table . " WHERE " . static::$primaryKey . " = ?";
+        static::$params = [$ids];
+        return static::query();
+    }
+
+    public function update(array $data): bool
     {
         $sqlRequestPart = "";
 
@@ -75,83 +156,93 @@ class Model
             $sqlRequestPart .= "{$key} = :{$key}{$comma}";
             $i++;
         }
-        $data['id'] = $this->id;
+        $id = static::$primaryKey;
+        $data[$id] = $this->$id;
 
-        self::$sql = "UPDATE " . static::$table . " SET {$sqlRequestPart} WHERE id = :id";
-        return self::query($data, true);
+        static::$sql = "UPDATE " . static::$table . " SET {$sqlRequestPart} WHERE " . static::$primaryKey . " = :" . static::$primaryKey;
+        static::$params = $data;
+        return static::query(true);
     }
 
-    // update row in database
-    public static function static_update(int $id, array $data)
+    public function delete(): bool
     {
-        // create a part of sql for fields that we want to update
-        $sqlRequestPart = "";
-
-        $i = 1;
-        foreach ($data as $key => $value) {
-            $comma = $i === count($data) ? "" : ", ";
-            $sqlRequestPart .= "{$key} = :{$key}{$comma}";
-            $i++;
-        }
-        $data['id'] = $id;
-
-        self::$sql = "UPDATE " . static::$table . " SET {$sqlRequestPart} WHERE id = :id";
-        return self::query($data, true);
+        static::$sql = "DELETE FROM " . static::$table . " WHERE " . static::$primaryKey . " = ?";
+        $id = static::$primaryKey;
+        static::$params = [$this->$id];
+        static::query();
+        return true;
     }
 
-    public function delete()
-    {
-        self::$sql = "DELETE FROM " . static::$table . " WHERE id = ?";
-        return self::query([$this->id]);
-    }
-    // delete a row in database using id
-    public static function static_delete(int $id): bool
-    {
-        self::$sql = "DELETE FROM " . static::$table . " WHERE id = ?";
-        return self::query([$id]);
-    }
 
-    public static function where(array $params)
+    public static function where($column, $operator = null, $value = null)
     {
         $wheres = "";
 
-        $i = 1;
-        foreach ($params as $key => $value) {
-            $comma = $i === count($params) ? "" : " AND ";
-            $wheres .= "{$key} = :{$key}{$comma}";
-            $i++;
+        if (is_array($column)) {
+            $i = 1;
+            foreach ($column as $key => $value) {
+                $comma = $i === count($column) ? "" : " AND ";
+                $wheres .= "{$key} = :{$key}{$comma}";
+                $i++;
+            }
+        } else {
+            $wheres = "$column $operator ?";
         }
 
-        self::$sql = "SELECT * FROM " . static::$table . " WHERE {$wheres}";
-        return self::query($params);
+        $model = static::getInstance();
+
+        $model::$sql = "SELECT * FROM " . static::$table . " WHERE {$wheres}";
+        $model::$params = is_array($column) ? $column : [$value];
+        // var_dump($model::$sql);
+        return $model;
+    }
+
+    public function orWhere($column, $operator = null, $value = null)
+    {
+        $wheres = "";
+
+        if (is_array($column)) {
+            $i = 1;
+            foreach ($column as $key => $value) {
+                $comma = $i === count($column) ? "" : " OR ";
+                $wheres .= "{$key} = :{$key}{$comma}";
+                $i++;
+            }
+        } else {
+            $wheres .= " OR $column $operator $value";
+        }
+
+        static::$sql .= "{$wheres}";
+        return $this;
     }
 
     /**
      * Set query for do something in database
      * 
-     * @param array|null $params If we want to make prepared request
      * @param bool $single For retrieve one instance
      */
-    private static function query(?array $params = null, bool $single = null)
+    private static function query(bool $single = null)
     {
+        $params = static::$params;
+        static::$db = static::$db ?? new DBConnection(DB, DB_NAME, DB_HOST, DB_USER, DB_PWD);
         $method = is_null($params) ? 'query' : 'prepare';
         $fetch = is_null($single) ? 'fetchAll' : 'fetch';
-        self::$db = new DBConnection(DB, DB_NAME, DB_HOST, DB_USER, DB_PWD);
 
-        if (strpos(self::$sql, 'INSERT') === 0 || strpos(self::$sql, 'UPDATE') === 0 || strpos(self::$sql, 'DELETE') === 0) {
-            $stmt = self::$db->getPDO()->$method(self::$sql);
-            $stmt->setFetchMode(PDO::FETCH_CLASS, self::class, [self::$db]);
+        if (strpos(static::$sql, 'INSERT') === 0 || strpos(static::$sql, 'UPDATE') === 0 || strpos(static::$sql, 'DELETE') === 0) {
+            $stmt = static::$db->getPDO()->$method(static::$sql);
+            $stmt->setFetchMode(PDO::FETCH_CLASS, static::class, [static::$db]);
             return $stmt->execute($params);
         }
 
-        $stmt = self::$db->getPDO()->$method(self::$sql);
-        $stmt->setFetchMode(PDO::FETCH_CLASS, self::class, [self::$db]);
+        $stmt = static::$db->getPDO()->$method(static::$sql);
+        $stmt->setFetchMode(PDO::FETCH_CLASS, static::class, [static::$db]);
 
         if ($method === 'query') {
-            return $stmt->$fetch();
+            $results = $stmt->$fetch();
         } else {
             $stmt->execute($params);
-            return $stmt->$fetch();
+            $results = $stmt->$fetch();
         }
+        return $results;
     }
 }

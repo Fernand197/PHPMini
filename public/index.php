@@ -18,12 +18,12 @@ define('SENDER', 'testapplication197@gmail.com');
 
 $router  = new Router();
 
-$router->get('/404', 'App\Controllers\HomeController@error404');
-$router->get('/', 'App\Controllers\HomeController@welcome');
+$router->get('/404', 'App\Http\Controllers\HomeController@error404');
+$router->get('/', 'App\Http\Controllers\HomeController@welcome');
 $router->get('/welcome', [HomeController::class, 'welcome']);
-$router->get('/user/:user', function (Request $request, $user) {
-    echo "My name is $user->username and I'm 22 years old";
-    // var_dump($request);
+$router->get('/user/:user', function (Request $request, User $user) {
+    // echo "My name is $user->email and I'm 22 years old";
+    var_dump($user);
 }, "test");
 // echo $router->generate("test", ['fernand', 15]);
 $router->run();
