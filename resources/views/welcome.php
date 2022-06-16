@@ -13,7 +13,9 @@ use Router\Router;
 </head>
 
 <body>
-    Congratulations !!! You've successfully installed PHPMini.
+    Congratulations !!! You've successfully installed PHPMini. <br>
+    Username: <?= $user->username ?><br>
+    Email: <?= $user->email ?>
 </body>
 
 </html>

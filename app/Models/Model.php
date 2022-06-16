@@ -6,6 +6,7 @@ use Closure;
 use Database\DBConnection;
 use Exception;
 use PDO;
+use PHPMini\Models\ModelCollection;
 
 class Model
 {
@@ -18,18 +19,25 @@ class Model
 
     public function __construct()
     {
-        static::$db = new DBConnection(DB, DB_NAME, DB_HOST, DB_USER, DB_PWD);
+        static::$db = new DBConnection(
+            env('DB_CONNECTION', "mysql"),
+            env("DB_DATABASE"),
+            env("DB_HOST"),
+            env("DB_USERNAME"),
+            env("DB_PASSWORD")
+        );
     }
 
-    public static function getInstance()
+    public static function parseColumn($columns)
     {
-        return new static();
+        return implode(',', $columns);
     }
+
 
     // select all data tables
-    public static function all(array $columns = ["*"]): array
+    public static function all(array $columns = ["*"])
     {
-        $columns = implode(',', $columns);
+        $columns = static::parseColumn($columns);
         static::$sql =  "SELECT $columns FROM " . static::$table;
         return static::query();
     }
@@ -43,7 +51,7 @@ class Model
     // select a row of table using id field
     public static function find($id, array $columns = ['*'])
     {
-        $columns = implode(",", $columns);
+        $columns = static::parseColumn($columns);
         static::$sql = "SELECT $columns FROM " . static::$table . " WHERE " . static::$primaryKey . " = ?";
         static::$params = [$id];
         return static::query(true);
@@ -51,6 +59,7 @@ class Model
 
     public static function findOrFail(int $id, array $columns = ['*'])
     {
+        // var_dump("hey") or die;
         $result = static::find($id, $columns);
         if (is_null($result)) {
             throw new Exception("Model " . static::class . " not fount");
@@ -79,27 +88,46 @@ class Model
 
     public function first(array $columns = ['*'])
     {
+        // var_dump(static::$params) or die;
         return static::query(true);
     }
 
     public function firstOrFail(array $columns = ['*'])
     {
-        $result = $this->first($columns);
+        $result = static::first($columns);
         if (empty($result)) {
             throw new Exception("Model " . static::class . " not fount");
         }
         return $result;
     }
 
-    public function get(array $columns = ['*']): array
+    public function get(array $columns = ['*'])
     {
+        // var_dump(static::$params) or die;
         return static::query();
     }
 
-    public function oderBy(string $column, string $dir = "asc")
+    public function orderBy(string $column, string $dir = "asc")
     {
         static::$sql .= " ORDER BY $column $dir";
-        return static::query();
+        return $this;
+    }
+
+    public function orderByDesc(string $column)
+    {
+        return $this->orderBy($column, "desc");
+    }
+
+    public function limit(int $limit)
+    {
+        static::$sql .= " LIMIT $limit";
+        return $this;
+    }
+
+    public function offset(int $offset)
+    {
+        static::$sql .= " OFFSET $offset";
+        return $this;
     }
 
     public static function firstOrCreate(array $attributes = [], array $values = [])
@@ -124,9 +152,12 @@ class Model
 
     public function firstOr($columns = ['*'], Closure $callback = null)
     {
-        $result = $this->first();
-        if ($result) {
-            return $result;
+        if (!is_array($columns) && is_callable($columns)) {
+            $result = $this->first(["*"]);
+            var_dump($result) or die;
+            if ($result) {
+                return $result;
+            }
         }
         if (is_callable($columns)) {
             return call_user_func_array($columns, []);
@@ -134,10 +165,31 @@ class Model
         return call_user_func_array($callback, []);
     }
 
+    public static function findOr($key, $columns = ['*'], Closure $callback = null)
+    {
+        if (!is_array($columns) && is_callable($columns)) {
+            $columns = ['*'];
+            $result = static::find($key, $columns);
+            if ($result) {
+                return $result;
+            }
+        }
+        if (is_callable($columns)) {
+            return call_user_func_array($columns, []);
+        }
+        return call_user_func_array($callback, []);
+    }
+
+    public static function truncate()
+    {
+        static::$sql = "TRUNCATE TABLE " . static::$table;
+        return static::query();
+    }
+
     public static function destroy($ids): bool
     {
         if (is_array($ids)) {
-            $ids = implode(",", $ids);
+            $ids = static::parseColumn($ids);
             static::$sql = "DELETE FROM " . static::$table . " WHERE " . static::$primaryKey . " IN ($ids)";
             return static::query();
         }
@@ -157,7 +209,7 @@ class Model
             $i++;
         }
         $id = static::$primaryKey;
-        $data[$id] = $this->$id;
+        $data[$id] = static::$$id;
 
         static::$sql = "UPDATE " . static::$table . " SET {$sqlRequestPart} WHERE " . static::$primaryKey . " = :" . static::$primaryKey;
         static::$params = $data;
@@ -173,46 +225,85 @@ class Model
         return true;
     }
 
+    public function andWhere($column, $operator = null, $value = null)
+    {
+        $wheres = " AND ";
+        if (is_array($column)) {
+            $i = 1;
+            $wheres .= "(";
+            foreach ($column as $key => $value) {
+                $comma = $i === count($column) ? "" : " AND ";
+                $wheres .= "{$key} = ?{$comma}";
+                static::$params[] = $value;
+                $i++;
+            }
+            $wheres .= ")";
+            // $model::$params =  $column;
+        } elseif (is_string($column) && is_null($value)) {
+            $wheres .= " $column = ?";
+            static::$params[] = $operator;
+        } else {
+            $wheres .= "$column $operator ?";
+            static::$params[] = $value;
+        }
+
+        static::$sql .= $wheres;
+
+        return $this;
+    }
 
     public static function where($column, $operator = null, $value = null)
     {
         $wheres = "";
+        $model = new static;
+        $model::$params = [];
 
         if (is_array($column)) {
             $i = 1;
+            $wheres .= "(";
             foreach ($column as $key => $value) {
                 $comma = $i === count($column) ? "" : " AND ";
-                $wheres .= "{$key} = :{$key}{$comma}";
+                $wheres .= "{$key} = ?{$comma}";
+                $model::$params[] = $value;
                 $i++;
             }
+            $wheres .= ")";
+        } elseif (is_string($column) && is_null($value)) {
+            $wheres = " $column = ?";
+            $model::$params[] = $operator;
         } else {
             $wheres = "$column $operator ?";
+            $model::$params[] = $value;
         }
 
-        $model = static::getInstance();
 
-        $model::$sql = "SELECT * FROM " . static::$table . " WHERE {$wheres}";
-        $model::$params = is_array($column) ? $column : [$value];
-        // var_dump($model::$sql);
+        $model::$sql = "SELECT * FROM " . $model::$table . " WHERE {$wheres}";
         return $model;
     }
 
     public function orWhere($column, $operator = null, $value = null)
     {
-        $wheres = "";
+        $wheres = " OR ";
 
         if (is_array($column)) {
             $i = 1;
+            $wheres .= "(";
             foreach ($column as $key => $value) {
                 $comma = $i === count($column) ? "" : " OR ";
-                $wheres .= "{$key} = :{$key}{$comma}";
+                $wheres .= "{$key} = ?{$comma}";
+                static::$params[] = $value;
                 $i++;
             }
+            $wheres .= ")";
+        } elseif (is_string($column) && is_null($value)) {
+            $wheres .= "$column = ?";
+            static::$params[] = $operator;
         } else {
-            $wheres .= " OR $column $operator $value";
+            $wheres .= "$column $operator ?";
+            static::$params[] =  $value;
         }
 
-        static::$sql .= "{$wheres}";
+        static::$sql .= $wheres;
         return $this;
     }
 
@@ -221,10 +312,15 @@ class Model
      * 
      * @param bool $single For retrieve one instance
      */
-    private static function query(bool $single = null)
+    protected static function query(bool $single = null)
     {
         $params = static::$params;
-        static::$db = static::$db ?? new DBConnection(DB, DB_NAME, DB_HOST, DB_USER, DB_PWD);
+        static::$db = static::$db ?? new DBConnection(env('DB_CONNECTION', "mysql"),
+                env("DB_DATABASE"),
+                env("DB_HOST"),
+                env("DB_USERNAME"),
+                env("DB_PASSWORD")
+            );
         $method = is_null($params) ? 'query' : 'prepare';
         $fetch = is_null($single) ? 'fetchAll' : 'fetch';
 
@@ -238,11 +334,22 @@ class Model
         $stmt->setFetchMode(PDO::FETCH_CLASS, static::class, [static::$db]);
 
         if ($method === 'query') {
-            $results = $stmt->$fetch();
+            $results = $fetch === 'fetchAll' ? new ModelCollection($stmt->$fetch()) : $stmt->$fetch();
         } else {
             $stmt->execute($params);
-            $results = $stmt->$fetch();
+            $results = $fetch === 'fetchAll' ? new ModelCollection($stmt->$fetch()) : $stmt->$fetch();
         }
         return $results;
+    }
+
+    public function getKeyName()
+    {
+        return static::$primaryKey;
+    }
+
+    public function getKey()
+    {
+        $name = $this->getKeyName();
+        return $this->$name;
     }
 }

@@ -3,22 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Requests\Request;
+use App\Http\Requests\Request;
 
 class HomeController extends Controller
 {
     public function error404()
     {
-        return $this->view('errors/error404');
+        return view('errors.error404');
     }
-    public function welcome()
+    public function welcome(User $user)
     {
-        $user = User::where([
-            'username' => "Tores",
-        ])->firstOr(function () {
-            return User::find(1);
-        });
-        var_dump($user) or die;
-        return $this->view('welcome');
+        $users = User::where('id', '>=', 8)
+            ->orWhere('id', 1)
+            ->limit(5)
+            ->get();
+        dd($user);
+        return view('welcome', compact('user'));
     }
 }

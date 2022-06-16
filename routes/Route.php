@@ -3,76 +3,187 @@
 namespace Router;
 
 use App\Http\Requests\Request;
+use ReflectionException;
+use ReflectionFunction;
+use ReflectionMethod;
 
 class Route
 {
 
-    public $path;
+    public $uri;
+    public $controller;
+    public $parameters = [];
+    public $parameterNames;
     public $action;
-    public $matches;
+    private $router;
     public $method;
+    public $methods;
 
-    public function __construct(string $path, $action, string $method = "get")
+    public function __construct($methods, $uri, $action)
     {
-        $this->path = trim($path, '/');
-        $this->action = $action;
-        $this->method = $method;
+        $this->uri = $uri;
+        $this->methods = (array) $methods;
+        $this->action = $this->parseAction($action);
+        // $this->controller = $this->getController();
     }
 
-    public function matches(string $url)
+    public function matches(string $url): bool
     {
-        $path = preg_replace('#:([\w]+)#', '([^/]+)', $this->path);
+        $path = preg_replace('#{([\w]+)}#', '([^/]+)', $this->uri);
         $pathToMatch = "#^$path$#";
-
+        // var_dump(preg_match($pathToMatch, $url, $matches), $matches);
         if (preg_match($pathToMatch, $url, $matches)) {
-            $this->matches = $matches;
-            // var_dump($this->matches) or die;
+            array_shift($matches);
+            if ($path === $this->uri) {
+                $this->parameters = $matches;
+            } else {
+                preg_match($pathToMatch, $this->uri, $keys);
+                array_shift($keys);
+                foreach ($keys as $k => $key) {
+                    $key = trim($key, '{}');
+                    $model = ucfirst($key);
+                    $parameters = [];
+                    $model = "App\\Models\\$model";
+                    $parameters[] = $model::findOrFail($matches[$k]);
+                    $this->parameters[$key] = $parameters[$k];
+                    // var_dump($this->parameters) or die;
+                }
+            }
+
             return true;
+        }
+    
+        return false;
+    }
+
+    public function isControllerAction(): bool
+    {
+        return is_string($this->action['uses']);
+    }
+    
+    /**
+     * @throws ReflectionException
+     */
+    public function runController()
+    {
+        $controller = $this->getController();
+        $method = $this->getControllerMethod();
+        $params = array_values($this->parameters);
+        $r = new ReflectionMethod($controller, $method);
+        if ($r->getNumberOfParameters() > 0) {
+            $p = $r->getParameters()[0];
+            if ($p->getType()->getName() === Request::class) {
+                array_unshift($params, new Request());
+            }
+        }
+        return (new $controller())->$method(...$params);
+    }
+    
+    /**
+     * @throws ReflectionException
+     */
+    public function runCallable()
+    {
+        $callable = $this->action['uses'];
+        $params = array_values($this->parameters);
+        $r = new ReflectionFunction($callable);
+        if ($r->getNumberOfParameters() > 0) {
+            $p = $r->getParameters()[0];
+            // var_dump($params);
+            if ($p->getType() !== null && ($p->getType()->getName() === Request::class)) {
+                array_unshift($params, new Request());
+            }
+        }
+        return $callable(...$params);
+    }
+
+    public function parseAction($action): array
+    {
+        if (is_array($action)) {
+            return [
+                "uses" => $action[0] . '@' . $action[1],
+                "controller" => $action[0] . '@' . $action[1],
+            ];
         } else {
-            return false;
+            return ["uses" => $action];
         }
     }
 
+    public function getController()
+    {
+        if (is_null($this->controller)) {
+            $this->controller = $this->parseController()[0];
+        }
+        return $this->controller;
+    }
+
+    public function getControllerMethod()
+    {
+        return $this->parseController()[1];
+    }
+
+    public function parseController()
+    {
+        return explode('@', $this->action["uses"]);
+    }
+
+    public function hasParameters(): bool
+    {
+        return isset($this->parameters);
+    }
+
+    public function hasParameter($name): bool
+    {
+        if ($this->hasParameters()) {
+            return array_key_exists($name, $this->parameters);
+        }
+        return false;
+    }
+
+    public function parameters()
+    {
+        if ($this->hasParameters()) {
+            return $this->parameters;
+        }
+    }
+
+    public function name($name): Route
+    {
+        $this->action['as'] = isset($this->action['as']) ? $this->action["as"] . $name : $name;
+        return $this;
+    }
+
+    public function hasName(): bool
+    {
+        return isset($this->action['as']);
+    }
+
+    public function getName()
+    {
+        if ($this->hasName()) {
+            return $this->action['as'];
+        }
+    }
+
+    public function setRouter($router): Route
+    {
+        $this->router = $router;
+        return $this;
+    }
+    public function methods(): array
+    {
+        return $this->methods;
+    }
+    
+    /**
+     * @throws ReflectionException
+     */
     public function execute()
     {
-        $request = new Request();
-        $len = count($this->matches);
-        $params[] = $request;
-        $parameters = [];
-        $data = [];
-        if ($len > 1) {
-            $parameters = array_slice($this->matches, 1, $len);
-            $uri = $this->path;
-            $this->matches($uri);
-            $keys = array_slice($this->matches, 1, $len);
+        if ($this->isControllerAction()) {
+            // var_dump("yes") or die;
+            return $this->runController();
         }
-        // var_dump($keys);
-        foreach ($parameters as $key => $value) {
-            $k = trim($keys[$key], ':');
-            // var_dump($k);
-            $data[$k] = $value;
-        }
-
-        foreach ($data as $key => $value) {
-            $model = ucfirst($key);
-            $parameters = [];
-            $model = "App\\Models\\$model";
-            $parameters[] = $model::findOrFail($value);
-        }
-        // var_dump($parameters) or die;
-        $params = array_merge($params, $parameters);
-        // var_dump($params) or die;
-        if (is_callable($this->action)) {
-            return call_user_func_array($this->action, $params);
-            // var_dump($this->action, $p) or die;
-        }
-        if (is_array($this->action)) {
-            $this->action = $this->action[0] . '@' . $this->action[1];
-        }
-        $params = explode('@', $this->action);
-        $controller = new $params[0]();
-        $method = $params[1];
-        // var_dump($p, get_class($controller) . '::' . $method) or die;
-        return isset($p) ? $controller->$method(...$params) : $controller->$method(...$params);
+        return $this->runCallable();
     }
 }

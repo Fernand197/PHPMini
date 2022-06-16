@@ -4,27 +4,22 @@ namespace Database;
 
 use PDO;
 use Exception;
+use PDOException;
 
 class DBConnection
 {
 
-    private $dbname;
-    private $host;
     private $username;
     private $password;
     private $pdo;
-    private $db;
     private $dsn;
 
 
-    public function __construct(string $db = "mysql", string $dbname, string $host, string $username, string $password)
+    public function __construct(string $db, string $dbname, string $host, string $username, string $password)
     {
-        $this->db = $db;
-        $this->dbname = $dbname;
-        $this->host = $host;
         $this->username = $username;
         $this->password = $password;
-        $this->dsn = "{$this->db}:dbname={$this->dbname};host={$this->host}";
+        $this->dsn = "{$db}:dbname={$dbname};host={$host}";
     }
 
 
@@ -37,8 +32,8 @@ class DBConnection
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ
             ]);
-        } catch (Exception $e) {
-            echo "Can't connect to database ";
+        } catch (PDOException $e) {
+            throw new PDOException($e->getMessage(), $e->getCode());
         }
     }
 }
