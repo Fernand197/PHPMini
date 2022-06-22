@@ -4,11 +4,11 @@ namespace PHPMini\Application;
 
 use Database\DBConnection;
 use PHPMini\Container\Container;
-use Router\Router;
+use PHPMini\Router\Router;
 
 class Application
 {
-    protected $router;
+    public static Router $router;
     private static DBConnection $DB;
     private static Container $container;
     
@@ -17,7 +17,7 @@ class Application
      */
     public function __construct(Router $router)
     {
-        $this->router = $router;
+        static::$router = $router;
         static::$container = new Container();
     }
     
@@ -25,6 +25,6 @@ class Application
     {
         $requestUri = $_SERVER['REQUEST_URI'];
         $requestMethod = $_SERVER['REQUEST_METHOD'];
-        $this->router->run($requestUri, $requestMethod);
+        static::$router->run($requestUri, $requestMethod);
     }
 }

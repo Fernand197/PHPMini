@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Validations;
+namespace PHPMini\Validations;
 
 class Validator
 {
 
-    private $data;
+    private array $data;
 
-    private $errors;
+    private array $errors = [];
 
     public function __construct(array $data)
     {
         $this->data = $data;
     }
 
-    public function validate(array $rules)
+    public function validate(array $rules): array
     {
         foreach ($rules as $name => $arrayRules) {
             if (array_key_exists($name, $this->data)) {
@@ -60,14 +60,14 @@ class Validator
         return $this->errors;
     }
 
-    public function emailValidate(string $name, string $value)
+    public function emailValidate(string $name, string $value): void
     {
         if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
             $this->errors[$name][] = 'Invalid email format';
         }
     }
 
-    public function passwordValidate(string $name, string $value)
+    public function passwordValidate(string $name, string $value): void
     {
         if (
             strlen($value) < 8
@@ -80,23 +80,23 @@ class Validator
         }
     }
 
-    public function usernameValidate(string $name, string $value)
+    public function usernameValidate(string $name, string $value): void
     {
         if (!preg_match("/^[a-zA-Z-]*$/", $value)) {
             $this->errors[$name][] = 'Only letters and white space allowed';
         }
     }
 
-    public function required(string $name, string $value)
+    public function required(string $name, string $value): void
     {
         $value = trim($value);
-        if (!isset($value) || is_null($value) || empty($value)) {
+        if (empty($value)) {
             $this->errors[$name][] = "{$name} is required.";
         }
     }
 
 
-    public function min(string $name, string $value, string $rule)
+    public function min(string $name, string $value, string $rule): void
     {
         preg_match_all("/(\d+)/", $rule, $matches);
         $limit = (int) $matches[0][0];
@@ -106,7 +106,7 @@ class Validator
         }
     }
 
-    public function max(string $name, string $value, string $rule)
+    public function max(string $name, string $value, string $rule): void
     {
         preg_match_all("/(\d+)/", $rule, $matches);
         $limit = (int) $matches[0][0];
@@ -116,7 +116,7 @@ class Validator
         }
     }
 
-    public function maxSize(string $name, int $value, string $rule)
+    public function maxSize(string $name, int $value, string $rule): void
     {
         preg_match_all("/(\d+)/", $rule, $matches);
         $limit = (int) $matches[0][0];
@@ -126,9 +126,9 @@ class Validator
         }
     }
 
-    public function ext(string $name, string $value, array $ext)
+    public function ext(string $name, string $value, array $ext): void
     {
-        if (!in_array($value, $ext)) {
+        if (!in_array($value, $ext, true)) {
             $this->errors[$name][] = "{$value} extension aren't allowed";
         }
     }

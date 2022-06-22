@@ -2,7 +2,6 @@
 
 namespace PHPMini\Models;
 
-use App\Models\Model;
 use PHPMini\Collections\Collection;
 
 class ModelCollection extends Collection
@@ -28,7 +27,7 @@ class ModelCollection extends Collection
 
     public function contains($key, $operator = null, $value = null)
     {
-        if (func_num_args() > 1 || (!is_string($value) && is_callable($value))) {
+        if ((!is_string($value) && is_callable($value)) || func_num_args() > 1) {
             return parent::contains(...func_get_args());
         }
 
@@ -56,14 +55,14 @@ class ModelCollection extends Collection
         return $dictionary;
     }
 
-    public function modelKeys()
+    public function modelKeys(): array
     {
         return array_map(function ($model) {
             return $model->getKey();
         }, $this->items);
     }
 
-    public function merge($items)
+    public function merge($items): ModelCollection
     {
         $dictionary = $this->getDictionary();
 
@@ -74,7 +73,7 @@ class ModelCollection extends Collection
         return new static(array_values($dictionary));
     }
 
-    public function intersect($items)
+    public function intersect($items): ModelCollection
     {
         $intersect = new static;
 

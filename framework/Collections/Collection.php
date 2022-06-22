@@ -84,10 +84,8 @@ class Collection
             if (empty($items)) {
                 return value($default);
             }
-
-            foreach ($items as $item) {
-                return $item;
-            }
+            $k = array_key_first($items);
+            return $items[$k];
         }
 
         foreach ($items as $key => $value) {
@@ -180,7 +178,7 @@ class Collection
             return empty($this->items) ? value($default) : end($this->items);
         }
 
-        return static::first(array_reverse($this->items, true), $callback, $default);
+        return $this->first(array_reverse($this->items, true), $callback, $default);
     }
     public function count()
     {

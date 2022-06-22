@@ -6,9 +6,12 @@ use Database\DBConnection;
 
 abstract class Controller
 {
-    protected $db;
-
-
+    /**
+     * @var DBConnection
+     */
+    protected DBConnection $db;
+    
+    
     public function __construct()
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -23,6 +26,9 @@ abstract class Controller
         );
     }
     
+    /**
+     * @return DBConnection
+     */
     protected function getDB(): DBConnection
     {
         return $this->db;

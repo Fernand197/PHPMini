@@ -1,8 +1,8 @@
 <?php
 
-namespace Router;
+namespace PHPMini\Router;
 
-use App\Http\Requests\Request;
+use PHPMini\Requests\Request;
 use ReflectionException;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -16,6 +16,7 @@ class Route
     public $parameterNames;
     public $action;
     private $router;
+    public $matches;
     public $method;
     public $methods;
 
@@ -24,7 +25,6 @@ class Route
         $this->uri = $uri;
         $this->methods = (array) $methods;
         $this->action = $this->parseAction($action);
-        // $this->controller = $this->getController();
     }
 
     public function matches(string $url): bool
@@ -34,19 +34,27 @@ class Route
         // var_dump(preg_match($pathToMatch, $url, $matches), $matches);
         if (preg_match($pathToMatch, $url, $matches)) {
             array_shift($matches);
+            $this->matches = $matches;
             if ($path === $this->uri) {
                 $this->parameters = $matches;
             } else {
                 preg_match($pathToMatch, $this->uri, $keys);
                 array_shift($keys);
                 foreach ($keys as $k => $key) {
+                    $n = $key;
                     $key = trim($key, '{}');
-                    $model = ucfirst($key);
-                    $parameters = [];
-                    $model = "App\\Models\\$model";
-                    $parameters[] = $model::findOrFail($matches[$k]);
-                    $this->parameters[$key] = $parameters[$k];
-                    // var_dump($this->parameters) or die;
+                    // view if it is a model we want to inject in how controller
+                    $name = explode($n, $this->uri)[0];
+                    $parameters = null;
+                    if(str_contains($name, $key)){
+                        $model = ucfirst($key);
+                        $model = "App\\Models\\$model";
+                        $parameters = $model::findOrFail($matches[$k]);
+                    }else {
+                        $parameters = $matches[$k];
+                    }
+                    
+                    $this->parameters[$key] = $parameters;
                 }
             }
 
@@ -72,7 +80,7 @@ class Route
         $r = new ReflectionMethod($controller, $method);
         if ($r->getNumberOfParameters() > 0) {
             $p = $r->getParameters()[0];
-            if ($p->getType()->getName() === Request::class) {
+            if (!is_null($p->getType()) && $p->getType()->getName() === Request::class) {
                 array_unshift($params, new Request());
             }
         }
@@ -104,9 +112,9 @@ class Route
                 "uses" => $action[0] . '@' . $action[1],
                 "controller" => $action[0] . '@' . $action[1],
             ];
-        } else {
-            return ["uses" => $action];
         }
+    
+        return ["uses" => $action];
     }
 
     public function getController()

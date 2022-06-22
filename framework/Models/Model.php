@@ -1,21 +1,21 @@
 <?php
 
-namespace App\Models;
+namespace PHPMini\Models;
 
 use Closure;
 use Database\DBConnection;
 use Exception;
 use PDO;
-use PHPMini\Models\ModelCollection;
+use function env;
 
 class Model
 {
 
-    protected static $db;
+    protected static DBConnection $db;
     protected static $table;
-    protected static $primaryKey = "id";
-    protected static $sql;
-    protected static $params = [];
+    protected static  $primaryKey = "id";
+    protected static string $sql;
+    protected static array $params = [];
 
     public function __construct()
     {
@@ -28,20 +28,23 @@ class Model
         );
     }
 
-    public static function parseColumn($columns)
+    public static function parseColumn($columns): string
     {
         return implode(',', $columns);
     }
 
 
     // select all data tables
-    public static function all(array $columns = ["*"])
+    public static function all(array $columns = ["*"]): ModelCollection
     {
         $columns = static::parseColumn($columns);
         static::$sql =  "SELECT $columns FROM " . static::$table;
         return static::query();
     }
-
+    
+    /**
+     * @throws Exception
+     */
     public static function lastInsert()
     {
         $id = static::$db->getPDO()->lastInsertId();
@@ -56,7 +59,10 @@ class Model
         static::$params = [$id];
         return static::query(true);
     }
-
+    
+    /**
+     * @throws Exception
+     */
     public static function findOrFail(int $id, array $columns = ['*'])
     {
         // var_dump("hey") or die;
@@ -69,6 +75,10 @@ class Model
 
 
     // insert an instance in database
+    
+    /**
+     * @throws Exception
+     */
     public static function create(array $data)
     {
         $fields = "";
@@ -94,14 +104,14 @@ class Model
 
     public function firstOrFail(array $columns = ['*'])
     {
-        $result = static::first($columns);
-        if (empty($result)) {
-            throw new Exception("Model " . static::class . " not fount");
+        $result = $this->first($columns);
+        if ($result === null) {
+            throw new \RuntimeException("Model " . static::class . " not fount");
         }
         return $result;
     }
 
-    public function get(array $columns = ['*'])
+    public function get(array $columns = ['*']): ModelCollection
     {
         // var_dump(static::$params) or die;
         return static::query();
@@ -129,7 +139,10 @@ class Model
         static::$sql .= " OFFSET $offset";
         return $this;
     }
-
+    
+    /**
+     * @throws Exception
+     */
     public static function firstOrCreate(array $attributes = [], array $values = [])
     {
         $result = static::where($attributes)->first();
@@ -138,7 +151,10 @@ class Model
         }
         return $result;
     }
-
+    
+    /**
+     * @throws Exception
+     */
     public static function updateOrCreate(array $attributes = [], array $values = [])
     {
         $result = static::where($attributes)->first();
@@ -231,10 +247,10 @@ class Model
         if (is_array($column)) {
             $i = 1;
             $wheres .= "(";
-            foreach ($column as $key => $value) {
+            foreach ($column as $key => $v) {
                 $comma = $i === count($column) ? "" : " AND ";
                 $wheres .= "{$key} = ?{$comma}";
-                static::$params[] = $value;
+                static::$params[] = $v;
                 $i++;
             }
             $wheres .= ")";
@@ -261,10 +277,10 @@ class Model
         if (is_array($column)) {
             $i = 1;
             $wheres .= "(";
-            foreach ($column as $key => $value) {
+            foreach ($column as $key => $v) {
                 $comma = $i === count($column) ? "" : " AND ";
                 $wheres .= "{$key} = ?{$comma}";
-                $model::$params[] = $value;
+                $model::$params[] = $v;
                 $i++;
             }
             $wheres .= ")";
@@ -288,10 +304,10 @@ class Model
         if (is_array($column)) {
             $i = 1;
             $wheres .= "(";
-            foreach ($column as $key => $value) {
+            foreach ($column as $key => $v) {
                 $comma = $i === count($column) ? "" : " OR ";
                 $wheres .= "{$key} = ?{$comma}";
-                static::$params[] = $value;
+                static::$params[] = $v;
                 $i++;
             }
             $wheres .= ")";
@@ -342,7 +358,7 @@ class Model
         return $results;
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return static::$primaryKey;
     }

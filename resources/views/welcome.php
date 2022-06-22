@@ -1,7 +1,4 @@
-<?php
 
-use Router\Router;
-?>
 <!DOCTYPE html>
 <html lang="en">
 

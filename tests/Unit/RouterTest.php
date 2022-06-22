@@ -3,9 +3,9 @@
 namespace Tests\Unit;
 
 use App\Http\Controllers\HomeController;
+use PHPMini\Router\Route;
+use PHPMini\Router\Router;
 use PHPUnit\Framework\TestCase;
-use Router\Route;
-use Router\Router;
 
 class RouterTest extends TestCase
 {

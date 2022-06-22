@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Http\Requests;
+namespace PHPMini\Requests;
 
 class Request
 {
-    public $request;
-    public $query;
-    public $files;
-    public $cookies;
-    public $server;
-    public $sessions;
+    public array $request  = [];
+    public array $query = [];
+    public array $files = [];
+    public array $cookies = [];
+    public array $server = [];
+    public array $sessions = [];
 
     public function __construct()
     {
@@ -17,19 +17,20 @@ class Request
         $this->query = $_GET;
         $this->files = $_FILES;
         $this->cookies = $_COOKIE;
+        $this->server = $_SERVER;
         $this->sessions = $_SESSION ?? [];
     }
-    public function keys()
+    public function keys(): array
     {
         return array_keys($this->all());
     }
 
-    public function all()
+    public function all(): array
     {
         return array_merge($this->request, $this->files);
     }
 
-    public function except($keys)
+    public function except($keys): array
     {
         $keys = is_array($keys) ? $keys : func_get_args();
         $results = $this->all();
@@ -62,27 +63,25 @@ class Request
         return $this->data_get($this->cookies, $key, $default);
     }
 
-    public function hasCookie($key)
+    public function hasCookie($key): bool
     {
         return !is_null($this->cookie($key));
     }
 
-    public function allFiles()
+    public function allFiles(): array
     {
         return $this->files;
     }
 
 
-    public function has($key)
+    public function has($key): bool
     {
         $keys = is_array($key) ? $key : func_get_args();
-
-        foreach ($keys as $key) {
-            if (in_array($key, $this->all())) {
+        foreach ($keys as $k => $value){
+            if(!array_key_exists($k, $this->all())){
                 return false;
             }
         }
-
         return true;
     }
 
@@ -103,7 +102,7 @@ class Request
         return $target[$key] ?? $default;
     }
 
-    public function missing($key)
+    public function missing($key): bool
     {
         $keys = is_array($key) ? $key : func_get_args();
 
@@ -114,17 +113,16 @@ class Request
      * only
      *
      * @param  array|mixed $keys
-     * @return void
+     *
+     * @return array
      */
-    public function only($keys)
+    public function only($keys): array
     {
         $keys = is_array($keys) ? $keys : func_get_args();
         $results = [];
 
         foreach ($keys as $key) {
-            $value = $this->data_get($this->all(), $key);
-
-            $results[$key] = $value;
+            $results[$key] = $this->data_get($this->all(), $key);
         }
 
         return $results;
