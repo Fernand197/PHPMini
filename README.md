@@ -37,7 +37,7 @@ like [Laravel](https://laravel.com).
 
 You can clone the repository on github with the command
 
-```git
+```cmd
 git clone https://github.com/Fernand197/PHPMini.git
 ```
 Create a **.env** file at root of project and copie the content of **.env.example** file and paste in it.
@@ -47,7 +47,7 @@ Create a **.env** file at root of project and copie the content of **.env.exampl
 Set up these environments variables in the **.env** file to configure the database.  
 Supported database are MYSQL, Postgresql and Sqlite.
 
-```config
+```env
 DB_CONNECTION=
 DB_HOST=
 DB_PORT=
@@ -517,7 +517,7 @@ Now clone the forked repository to your machine. Go to your GitHub account, open
 
 Open a terminal and run the following git command:
 
-```git
+```cmd
 git clone https://github.com/Fernand197/PHPMini.git
 ```
 
@@ -534,14 +534,14 @@ cd PHPMini
 
 Now create a branch using the git `checkout` command:
 
-```git
+```cmd
 git checkout -b your-new-branch-name
 ```
 
 example 
 
 
-```git
+```cmd
 git checkout -b john
 ```
 
@@ -549,13 +549,13 @@ git checkout -b john
 
 commit those changes using the git `commit` command:
 
-```git
+```cmd
 git commit -m "add your message"
 ```
 
 - Push change to GitHub
 
-```git
+```cmd
 git push origin <add-your-branch-name>
 ```
 
