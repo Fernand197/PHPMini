@@ -37,7 +37,7 @@ like [Laravel](https://laravel.com).
 
 You can clone the repository on github with the command
 
-```
+```git
 git clone https://github.com/Fernand197/PHPMini.git
 ```
 Create a **.env** file at root of project and copie the content of **.env.example** file and paste in it.
@@ -47,7 +47,7 @@ Create a **.env** file at root of project and copie the content of **.env.exampl
 Set up these environments variables in the **.env** file to configure the database.  
 Supported database are MYSQL, Postgresql and Sqlite.
 
-```
+```config
 DB_CONNECTION=
 DB_HOST=
 DB_PORT=
@@ -64,7 +64,7 @@ You can define web routes in **routes/web.php** using different methods like get
 The methods take 2 parameters: **uri** and **action**. **uri** must be a string and **action** can be a string, an 
 array or a callable.
 
-```
+```php
 $router->get("/welcome", "App\Http\Controllers\HomeController@welcome");
 
 $router->get("/welcome", [HomeController::class, "welcome"]);
@@ -79,7 +79,7 @@ $router->get("/welcome", function(){
 
 api routes are defined like web routes but in **routes/api.php**
 
-```
+```php
 $router->api()->group(function () use ($router){
     # define yours api routes here!
     
@@ -92,7 +92,7 @@ $router->api()->group(function () use ($router){
 
 you can change the base name of your api routes like this.
 
-```
+```php
 $router->api("your_basename_api_route")
 
 
@@ -111,7 +111,7 @@ You can define route with parameters
 Parameter can be a regular expression, a primary key for a model or just a simple parameter.  
 The number of parameters correspond to the number of parameters passed in the callable or the controller method.
 
-```
+```php
 // uri here can be "/welcome/john" 
 $router->get("/welcome/{name}", function($name){
     echo "Welcome " . $name;
@@ -140,7 +140,7 @@ $router->get("/user/(\d+)", function(User $user){
 ```
 By default Request are dispatched in callable and in the controller method.
 
-```
+```php
 $router->get("/welcome", function(Request $request){
     var_dump($request);
 });
@@ -155,7 +155,7 @@ public function welcome(Request $request){
 
 You can define routes that have the same sub-uri like this.
 
-```
+```php
 $router->scope("/users")->group(function() use ($router) {
 
     // uri here is "/user/{user}"
@@ -170,7 +170,7 @@ $router->scope("/users")->group(function() use ($router) {
 
 They are uses to define routes that based the same controller.
 
-```
+```php
 $router->controller(UserController::class)->group(function() use ($router){
     
     $router->get("users", "index");
@@ -186,7 +186,7 @@ $router->controller(UserController::class)->group(function() use ($router){
 Use to define routes with methods controller like **index**, **store**, **create**, **edit**, **show**, **update** 
 and **delete**. It takes 2 params: an **uri** and a **controller**
 
-```
+```php
 // define routes with these all methods
 $router->resource("/users", User::class)->all();
 
@@ -223,7 +223,7 @@ $router->resource("/users", User::class)->only(["index", "show"]);
 define routes for an api. It is same like resources routes but don't implement routes with methods **create** and 
 **edit**.
 
-```
+```php
 $router->apiResource("/users", UserConstroller::class);
 ```
 
@@ -231,7 +231,7 @@ $router->apiResource("/users", UserConstroller::class);
  
 To create multiple api resources routes
 
-```
+```php
 $router->apiResources([
     "/posts" => PostController::class,
     "/users" => User::controller::class
@@ -244,7 +244,7 @@ $router->apiResources([
 
 In the **app/Http/Controller** directory you can create all your controller.
 
-```
+```php
 # HomeController
 
 namespace App\Http\Controllers;
@@ -257,7 +257,7 @@ class HomeController extends Controller
 
 You can access Request in Controller methods. you must pass it as the first parameter.
 
-```
+```php
 public function index(Request $request)
 {
     var_dump($request);
@@ -266,7 +266,7 @@ public function index(Request $request)
 
 You can access to the escaped model in controller model.
 
-```
+```php
 // for the route uri "/users/{user}" you can acess the model corresponding to the "user" param
 
 public function show(User $user)
@@ -284,7 +284,7 @@ separated by comma (ex: "user.delete" correspond to "user/delete.php" file), an 
 variable that will be accessing on the view and bool a layout specify if the view is base on a layout.   
 View files are located in the **resources/views** directory
 
-```
+```php
 // in route
 $router->get("/welcome", function(){
     return view("welcome");
@@ -299,7 +299,7 @@ public function show()
 
 * Render a view with params
 
-```
+```php
 // in route
 $router->get("/welcome", function(){
     $username = "John";
@@ -316,7 +316,7 @@ public function show()
 
 you can access these on the view.
 
-```
+```php
 # welcome.php
 
 <!DOCTYPE html>
@@ -340,7 +340,7 @@ you can access these on the view.
 
 You must create a file for layout in **resources/views**. you can call it layout.php
 
-```
+```php
 # layout.php
 
 <!DOCTYPE html>
@@ -378,7 +378,7 @@ HTML;
 models are located in the **app/Http/models** directory. you can create your model like this and specify the table 
 name referenced in the database. you can also specify primary key by default it "id".
 
-```
+```php
 <?php
 
 namespace App\Models;
@@ -399,20 +399,20 @@ PHPMini provided a powerful ORM.
 
 - get all the database entities of specific model
 
-```
+```php
 User::all();
 ```
 
 - find a model buy primary keys
 
-```
+```php
 // find user by id 1;
 User::find(1);
 ```
 
 - where condition
 
-```
+```php
 // get all users where status is active
 User::where("status", "active")->get();
 
@@ -447,7 +447,7 @@ User::where('id', '>=', 8)
 
 - create method
 
-```
+```php
 User::create([
     "email" => "john@gmail.com";
     "username" => "john";
@@ -456,7 +456,7 @@ User::create([
 
 - update method.
 
-```
+```php
 
 // do it on a specific model
 $user->update([
@@ -466,7 +466,7 @@ $user->update([
 
 - delete method
 
-```
+```php
 $user->deleted();
 ```
 
@@ -474,7 +474,7 @@ $user->deleted();
 
 find a model or do any thing.
 
-```
+```php
 // find user with id 1 or return "nothing"
 User::findOr(1, function(){
     return "nothing";
@@ -485,14 +485,14 @@ User::findOr(1, function(){
 
 update a model or create if not found corresponding 
 
-```
+```php
 // if the isn't user with username john and email john@gmail.com create a user with these values and phone 12345784
 User::updateOrCreate(['username' => 'john', 'email' => 'john@gmail.com'], ['phone' => '12345784']);
 ```
 
 - delete multiple models by primary keys
 
-```
+```php
 
 // delete users with id 1, 2, and 10
 User::destroy([1, 2, 10]);
@@ -500,7 +500,7 @@ User::destroy([1, 2, 10]);
 
 - delete all the models
 
-```
+```php
 User::truncate();
 ```
 
@@ -517,7 +517,7 @@ Now clone the forked repository to your machine. Go to your GitHub account, open
 
 Open a terminal and run the following git command:
 
-```
+```git
 git clone https://github.com/Fernand197/PHPMini.git
 ```
 
@@ -528,20 +528,20 @@ git clone https://github.com/Fernand197/PHPMini.git
 
 Change to the repository directory on your computer (if you are not already there):
 
-```
+```cmd
 cd PHPMini
 ```
 
 Now create a branch using the git `checkout` command:
 
-```
+```git
 git checkout -b your-new-branch-name
 ```
 
 example 
 
 
-```
+```git
 git checkout -b john
 ```
 
@@ -549,13 +549,13 @@ git checkout -b john
 
 commit those changes using the git `commit` command:
 
-```
+```git
 git commit -m "add your message"
 ```
 
 - Push change to GitHub
 
-```
+```git
 git push origin <add-your-branch-name>
 ```
 
