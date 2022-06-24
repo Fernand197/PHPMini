@@ -438,7 +438,7 @@ User::where('id', '>=', 8)
             ->orWhere('id', 1)
             ->get();
 
-// you can chaining where condition
+// you can chaining where conditions
 User::where('id', '>=', 8)
             ->andWhere('username', "john")
             ->andWhere('email', "john@gmail.com")
@@ -467,7 +467,7 @@ $user->update([
 - delete method
 
 ```php
-$user->deleted();
+$user->delete();
 ```
 
 - findOr
