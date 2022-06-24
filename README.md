@@ -132,7 +132,7 @@ $router->get("/users/{user}", function(User $user){
     var_dump($user);
 });
 
-param here can only be digit
+// param here can only be digit
 $router->get("/user/(\d+)", function(User $user){
     var_dump($user);
 });
@@ -158,10 +158,10 @@ You can define routes that have the same sub-uri like this.
 ```php
 $router->scope("/users")->group(function() use ($router) {
 
-    // uri here is "/user/{user}"
+    // uri here is "/users/{user}"
     $router->get("{user}", [UserController::class, "show"]);
 
-    // uri here is "/user/{user}/posts/{post}"
+    // uri here is "/users/{user}/posts/{post}"
     $router->get("{user}/posts/{post}", [UserController::class, "show"]);
 });
 ```
@@ -173,11 +173,11 @@ They are uses to define routes that based the same controller.
 ```php
 $router->controller(UserController::class)->group(function() use ($router){
     
-    $router->get("users", "index");
-    $router->post("users", "store");
-    $router->get("users/{user}", "show");
-    $router->patch("users/{user}", "update");
-    $router->delete("users/{user}", "delete");
+    $router->get("/users", "index");
+    $router->post("/users", "store");
+    $router->get("/users/{user}", "show");
+    $router->patch("/users/{user}", "update");
+    $router->delete("/users/{user}", "delete");
 })
 ```
 
@@ -191,30 +191,30 @@ and **delete**. It takes 2 params: an **uri** and a **controller**
 $router->resource("/users", User::class)->all();
 
      // execution code behind
-    $router->get("users", "index");
-    $router->post("users", "store");
-    $router->get("users/create", "create");
-    $router->get("users/{user}", "show");
-    $router->patch("users/{user}", "update");
-    $router->get("users/{user}/edit", "edit");
-    $router->delete("users/{user}", "delete");
+    $router->get("/users", "index");
+    $router->post("/users", "store");
+    $router->get("/users/create", "create");
+    $router->get("/users/{user}", "show");
+    $router->patch("/users/{user}", "update");
+    $router->get("/users/{user}/edit", "edit");
+    $router->delete("/users/{user}", "delete");
 
 // define routes with only index and show methods
 $router->resource("/users", User::class)->only(["index", "show"]);
 
     // excution code behind
-    $router->get("users", "index");    
-    $router->get("users/{user}", "show");
+    $router->get("/users", "index");    
+    $router->get("/users/{user}", "show");
 
 //define routes with all methods except index and show
-$router->resource("/users", User::class)->only(["index", "show"]);
+$router->resource("/users", User::class)->except(["index", "show"]);
 
     // excution code behind
-    $router->post("users", "store");
-    $router->get("users/create", "create");
-    $router->patch("users/{user}", "update");
-    $router->get("users/{user}/edit", "edit");
-    $router->delete("users/{user}", "delete");
+    $router->post("/users", "store");
+    $router->get("/users/create", "create");
+    $router->patch("/users/{user}", "update");
+    $router->get("/users/{user}/edit", "edit");
+    $router->delete("/users/{user}", "delete");
 
 ```
 
