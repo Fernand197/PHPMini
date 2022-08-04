@@ -9,7 +9,6 @@ use PHPMini\Router\Router;
 class Application
 {
     public static Router $router;
-    private static DBConnection $DB;
     private static Container $container;
     
     /**

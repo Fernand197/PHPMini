@@ -20,7 +20,6 @@ class Router
         "edit" => ["get"],
         "destroy" => ["delete"]
     ];
-    private array $uris = [];
     public static array $verbs = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
     private string $resourceName;
     
