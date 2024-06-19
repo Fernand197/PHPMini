@@ -32,15 +32,6 @@ if (!function_exists('collect')) {
     }
 }
 
-if (!function_exists('route')) {
-
-    function route(string $name, ?array $params = null): string
-    {
-        dd(\PHPMini\Application\Application::$router);
-        return \PHPMini\Application\Application::$router->generate($name, $params);
-    }
-}
-
 if (!function_exists('env')) {
 
     function env($key, $default = null)
@@ -66,5 +57,12 @@ if (!function_exists('app')) {
     function app()
     {
         return \PHPMini\Application\Application::getInstance();
+    }
+}
+
+if (!function_exists('base_path')) {
+    function base_path($path = '')
+    {
+        return app()->basePath($path);
     }
 }

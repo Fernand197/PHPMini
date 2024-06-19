@@ -166,7 +166,7 @@ class Container implements ContainerInterface
      */
     protected function getClosure($abstract, $concrete)
     {
-        return function ($container, $parameters = []) use ($abstract, $concrete) {
+        return function (Container $container, $parameters = []) use ($abstract, $concrete) {
             if ($abstract === $concrete) {
                 return $container->build($concrete);
             }
@@ -509,6 +509,15 @@ class Container implements ContainerInterface
     }
 
 
+    /**
+     * Calls a given callback function or method with optional parameters and a default method.
+     *
+     * @param mixed $callback The callback function or method to call.
+     * @param array $parameters The optional parameters to pass to the callback.
+     * @param string|null $defaultMethod The default method to call if the callback is a string and does not contain '@'.
+     * @throws ContainerException If the method is not found in the class.
+     * @return mixed The result of calling the callback function or method with the given parameters.
+     */
     public function call($callback, array $parameters = [], $defaultMethod = null)
     {
         if (is_string($callback) && !$defaultMethod && method_exists($callback, '__invoke')) {
@@ -630,8 +639,14 @@ class Container implements ContainerInterface
                     ? $variadicDependencies
                     : [$variadicDependencies]);
             } else {
-                $modelClass = $parameter->getType()->getName();
-                $dependencies[] = $modelClass::findOrFail($parameters[$key]);
+                if (
+                    $parameter->getType() && !$parameter->getType()->isBuiltin() && (new ReflectionClass($parameter->getType()->getName()))->isSubclassOf(Model::class)
+                ) {
+                    $modelClass = $parameter->getType()->getName();
+                    $dependencies[] = $modelClass::findOrFail($parameters[$key]);
+                } else {
+                    $dependencies[] = $this->make($className);
+                }
             }
         } elseif ($parameter->isDefaultValueAvailable()) {
             $dependencies[] = $parameter->getDefaultValue();

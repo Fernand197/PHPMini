@@ -22,8 +22,7 @@ require __DIR__ . '/../vendor/autoload.php';
  */
 
 $app = require_once __DIR__ . '/../bootstrap/app.php';
-$router = require __DIR__ . '/../routes/web.php';
 
-$kernel = $app->make(Kernel::class, ["app" => $app, "router" => $router]);
+$kernel = $app->make(Kernel::class, ["app" => $app]);
 
 $kernel->handle(new Request);

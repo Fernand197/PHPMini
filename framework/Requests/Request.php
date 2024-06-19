@@ -93,7 +93,7 @@ class Request
 
     public function url(): string
     {
-        return $this->server->get("REQUEST_URI");
+        return explode("?", $this->server->get("REQUEST_URI"))[0];
     }
 
     public function scheme(): string
@@ -113,14 +113,9 @@ class Request
 
     public function fullUrlWithoutQuery(): string
     {
-        return $this->baseUrl() . $this->url();
+        return explode("?", $this->fullUrl())[0];
     }
-
-    public function pathInfo(): string
-    {
-        return $this->server->get("PATH_INFO");
-    }
-
+    
     public function fullUrlWithQuery(): string
     {
         return $this->fullUrl() . "?" . $this->queryString();

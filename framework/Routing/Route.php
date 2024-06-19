@@ -138,7 +138,7 @@ class Route
     {
         $path = preg_replace('#{([\w]+)}#', '([^/]+)', $this->uri);
         $pathToMatch = "#^$path$#";
-        if (preg_match($pathToMatch, $request->pathInfo(), $matches)) {
+        if (preg_match($pathToMatch, $request->url(), $matches)) {
             array_shift($matches);
             if ($path === $this->uri) {
                 $this->parameters = $matches;

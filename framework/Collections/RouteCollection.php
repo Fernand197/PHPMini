@@ -74,6 +74,17 @@ class RouteCollection implements \IteratorAggregate, \Countable
         return $this->nameList;
     }
 
+    public function refreshNamedRoutes()
+    {
+        $this->nameList = [];
+
+        foreach ($this->getRoutes() as $route) {
+            if ($name = $route->getName()) {
+                $this->nameList[$name] = $route;
+            }
+        }
+    }
+
     public function getIterator(): \Traversable
     {
         return new \ArrayIterator($this->getRoutes());

@@ -22,10 +22,10 @@ class Kernel
     protected $app;
 
 
-    public function __construct(Application $app, Router $router)
+    public function __construct(Application $app)
     {
         $this->app = $app;
-        $this->router = $router;
+        $this->router = $app->get('router');
     }
 
     /**

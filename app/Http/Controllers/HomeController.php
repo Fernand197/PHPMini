@@ -15,10 +15,8 @@ class HomeController extends Controller
     {
         return view('errors.error404');
     }
-    public function welcome(User $user, int $id)
+    public function welcome(User $user)
     {
-        dump(app(), $this->request);
-        // dump($id);
         $user->username = "presir";
         return view('welcome', compact('user'));
     }

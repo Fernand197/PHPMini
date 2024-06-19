@@ -5,7 +5,6 @@ namespace PHPMini\Routing;
 use PHPMini\Requests\Request;
 use PHPMini\Container\Container;
 use PHPMini\Collections\RouteCollection;
-use App\Exceptions\Container\NotFoundException;
 
 class Router
 {
@@ -205,7 +204,6 @@ class Router
 
         if (!$route) {
             return header("Location: /404", true, 404);
-            // throw new \Exception("Route not found");
         }
 
         $route->setContainer($this->container);
@@ -213,6 +211,16 @@ class Router
         $this->container->instance(Route::class, $this);
 
         return $route->run();
+    }
+
+    public function loadRoutes($routes)
+    {
+        require $routes;
+    }
+
+    public function getRoutes()
+    {
+        return $this->routes;
     }
 
     public function setContainer(Container $container)
