@@ -7,45 +7,45 @@ use PHPMini\Requests\Request;
 
 class HomeController extends Controller
 {
+
+    public function __construct(private readonly Request $request)
+    {
+    }
     public function error404()
     {
         return view('errors.error404');
     }
-    public function welcome($user, $id)
+    public function welcome(User $user, int $id)
     {
-        $users = User::where('id', '>=', 8)
-            ->orWhere('id', 1)
-            ->limit(5)
-            ->get();
-//        $uri = route("home.welcome", [1, 2]);
-        dd($user, $id);
+        dump(app(), $this->request);
+        // dump($id);
+        $user->username = "presir";
         return view('welcome', compact('user'));
     }
-    
+
     public function index()
     {
         $users = User::all();
-        dd($users);
+        dd($users->filter(fn ($user) => $user->email_verified_at));
     }
-    
-    public function show(Request $request, User $user)
+
+    public function show(User $user, Request $request, int $number = 10)
     {
-        var_dump($user->username, $user);
+        dump($user, $this->request, $number);
     }
-    
+
     public function store(Request $request)
     {
         var_dump($request);
     }
-    
+
     public function update(Request $request, User $user)
     {
         var_dump($user, $request->all());
     }
-    
+
     public function delete(Request $request, User $user)
     {
         var_dump("user $user->username deleted");
     }
 }
-

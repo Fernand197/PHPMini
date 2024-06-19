@@ -13,15 +13,15 @@ if (!function_exists('view')) {
 
         if (is_null($layout)) {
             $path = str_replace('.', DIRECTORY_SEPARATOR, $path);
-            return require VIEWS . $path . '.php';
+            return require app()->viewPath() . $path . '.php';
         }
-    
+
         ob_start();
         $path = str_replace('.', DIRECTORY_SEPARATOR, $path);
-        require VIEWS . $path . '.php';
+        require app()->viewPath() . $path . '.php';
         $content = ob_get_clean();
         $layout_path = str_replace('.', DIRECTORY_SEPARATOR, $layout);
-        return require VIEWS . $layout_path . '.php';
+        return require app()->viewPath() . $layout_path . '.php';
     }
 }
 if (!function_exists('collect')) {
@@ -37,7 +37,7 @@ if (!function_exists('route')) {
     function route(string $name, ?array $params = null): string
     {
         dd(\PHPMini\Application\Application::$router);
-        return \PHPMini\Application\Application::$router->generate($name , $params);
+        return \PHPMini\Application\Application::$router->generate($name, $params);
     }
 }
 
@@ -59,5 +59,12 @@ if (!function_exists('value')) {
     function value($value, ...$args)
     {
         return $value instanceof Closure ? $value(...$args) : $value;
+    }
+}
+
+if (!function_exists('app')) {
+    function app()
+    {
+        return \PHPMini\Application\Application::getInstance();
     }
 }

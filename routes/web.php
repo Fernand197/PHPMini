@@ -1,12 +1,12 @@
 <?php
 
-use App\Http\Controllers\HomeController;
 use App\Models\User;
-use PHPMini\Router\Router;
+use PHPMini\Routing\Router;
+use App\Http\Controllers\HomeController;
 
 $router = new Router();
 
-    /*
+/*
     |--------------------------------------------------------------------------
     | Web Routes
     |--------------------------------------------------------------------------
@@ -16,18 +16,14 @@ $router = new Router();
     */
 
 
-$router->controller(HomeController::class)->group(function () use ($router) {
-    
-    $router->get('/404', 'error404')->name('error.404');
-    
-    $router->get('welcome/{user}/{id}', 'welcome')->name('welcome');
+$router->get('/', function () {
+    echo "Hello world";
 });
-
-$router->apiResource('/users', HomeController::class);
-
-$router->get('/product/(\d+)/tag/(\w+)', function (int $id, string $tag) {
-    var_dump("Product id: " . $id . " with tag: " . $tag) or die;
-    $user = User::find($id);
+$router->get('/welcome/{user}/{id}', "App\Http\Controllers\HomeController@welcome");
+$router->get('/product/(\d+)/tag/(\w+)', function (User $user, string $tag) {
+    // var_dump("Product id: " . $user->id . " with tag: " . $tag) or die;
+    // $user = User::find($id);
+    // dd($id);
     return view('welcome', compact('user'));
 });
 

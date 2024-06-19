@@ -2,23 +2,26 @@
 
 namespace PHPMini\Requests;
 
+use PHPMini\Collections\Collection;
+
 class Request
 {
-    public array $request  = [];
-    public array $query = [];
-    public array $files = [];
-    public array $cookies = [];
-    public array $server = [];
-    public array $sessions = [];
+    public Collection $request;
+    public Collection $query;
+    public Collection $files;
+    public Collection $cookies;
+    public Collection $server;
+    public Collection $sessions;
+    public Collection $headers;
 
     public function __construct()
     {
-        $this->request = $_POST;
-        $this->query = $_GET;
-        $this->files = $_FILES;
-        $this->cookies = $_COOKIE;
-        $this->server = $_SERVER;
-        $this->sessions = $_SESSION ?? [];
+        $this->request = new Collection($_POST);
+        $this->query = new Collection($_GET);
+        $this->files = new Collection($_FILES);
+        $this->cookies = new Collection($_COOKIE);
+        $this->server = new Collection($_SERVER);
+        $this->sessions = new Collection($_SESSION ?? []);
     }
     public function keys(): array
     {
@@ -27,7 +30,7 @@ class Request
 
     public function all(): array
     {
-        return array_merge($this->request, $this->files);
+        return $this->request->concat($this->files->all())->all();
     }
 
     public function except($keys): array
@@ -68,17 +71,71 @@ class Request
         return !is_null($this->cookie($key));
     }
 
-    public function allFiles(): array
+    public function allFiles(): Collection
     {
         return $this->files;
     }
 
+    public function domain(): string
+    {
+        return $this->server->get("SERVER_NAME");
+    }
+
+    public function ip(): string
+    {
+        return $this->server->get("REMOTE_ADDR");
+    }
+
+    public function method(): string
+    {
+        return $this->server->get("REQUEST_METHOD");
+    }
+
+    public function url(): string
+    {
+        return $this->server->get("REQUEST_URI");
+    }
+
+    public function scheme(): string
+    {
+        return $this->server->get("REQUEST_SCHEME");
+    }
+
+    public function fullUrl(): string
+    {
+        return $this->baseUrl() . "/" . $this->url();
+    }
+
+    public function baseUrl(): string
+    {
+        return $this->server->get("HTTP_HOST");
+    }
+
+    public function fullUrlWithoutQuery(): string
+    {
+        return $this->baseUrl() . $this->url();
+    }
+
+    public function pathInfo(): string
+    {
+        return $this->server->get("PATH_INFO");
+    }
+
+    public function fullUrlWithQuery(): string
+    {
+        return $this->fullUrl() . "?" . $this->queryString();
+    }
+
+    public function queryString(): string
+    {
+        return http_build_query($this->query->all(), "", "&");
+    }
 
     public function has($key): bool
     {
         $keys = is_array($key) ? $key : func_get_args();
-        foreach ($keys as $k => $value){
-            if(!array_key_exists($k, $this->all())){
+        foreach ($keys as $k => $value) {
+            if (!array_key_exists($k, $this->all())) {
                 return false;
             }
         }
@@ -92,9 +149,7 @@ class Request
 
     public function input($key = null, $default = null)
     {
-        if ($this->has($key)) {
-            return $this->data_get($this->all(), $key, $default);
-        }
+        return $this->data_get($this->all(), $key, $default);
     }
 
     public function data_get($target, $key, $default = null)
@@ -104,9 +159,7 @@ class Request
 
     public function missing($key): bool
     {
-        $keys = is_array($key) ? $key : func_get_args();
-
-        return !$this->has($keys);
+        return !$this->has($key);
     }
 
     /**

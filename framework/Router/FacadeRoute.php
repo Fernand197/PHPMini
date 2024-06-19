@@ -1,12 +1,15 @@
 <?php
 
-namespace PHPMini\Router;
+namespace PHPMini\FacadeRoute;
 
-class Router
+use PHPMini\Collections\Collection;
+use PHPMini\Router\Route;
+
+class FacadeRoute
 {
 
     public $url;
-    public $routes = [];
+    public Collection $routes;
     public $namedRoutes = [];
     private $controller;
     private $basePath;
@@ -35,6 +38,10 @@ class Router
         $this->basePath = is_null($basePath) ? "" : rtrim($basePath, "/");
     }
 
+    public function getInstance()
+    {
+    }
+
     /**
      * addRoute
      *
@@ -44,13 +51,13 @@ class Router
      *
      * @return Route
      */
-    public function addRoute(string $uri, $action, array $methods = ["GET", "HEAD"]): \PHPMini\Router\Route
+    public function addRoute(string $uri, $action, array $methods = ["GET", "HEAD"]): \PHPMini\FacadeRoute\Route
     {
         if (isset($this->controller)) {
             $action = [$this->controller, $action];
         }
         $uri = strpos($uri, "/") === 0 ? $uri : '/' . $uri;
-        $route = (new \PHPMini\Router\Route($methods, rtrim($this->basePath . $uri, "/"), $action));
+        $route = (new \PHPMini\FacadeRoute\Route($methods, rtrim($this->basePath . $uri, "/"), $action));
         foreach ($methods as $method) {
             $this->routes[$method][] = $route;
         }
@@ -102,19 +109,19 @@ class Router
         // var_dump($this->basePath) or die;
     }
 
-    public function api($name = "api"): Router
+    public function api($name = "api"): FacadeRoute
     {
         $this->scope($name);
         return $this;
     }
 
-    public function controller($controller): Router
+    public function controller($controller): FacadeRoute
     {
         $this->controller = $controller;
         return $this;
     }
 
-    public function resource(string $uri, string $controller): Router
+    public function resource(string $uri, string $controller): FacadeRoute
     {
         $name = trim($uri, "/");
         $sg = rtrim($name, "s");
@@ -135,7 +142,7 @@ class Router
         return $this;
     }
 
-    public function only(array $methods): Router
+    public function only(array $methods): FacadeRoute
     {
         foreach ($methods as $method) {
             if (array_key_exists($method, $this->resourcesMethod)) {
@@ -147,17 +154,17 @@ class Router
         return $this;
     }
 
-    public function all(): Router
+    public function all(): FacadeRoute
     {
         return $this->except([]);
     }
 
-    public function apiResource(string $uri, string $controller): Router
+    public function apiResource(string $uri, string $controller): FacadeRoute
     {
         return $this->resource($uri, $controller)->except(["create", "edit"]);
     }
 
-    public function apiResources(array $names): Router
+    public function apiResources(array $names): FacadeRoute
     {
         foreach ($names as $uri => $controller) {
             $this->apiResource($uri, $controller);
@@ -165,14 +172,14 @@ class Router
         return $this;
     }
 
-    public function except(array $methods): Router
+    public function except(array $methods): FacadeRoute
     {
         $mk = array_keys($this->resourcesMethod);
         $methods = array_diff($mk, $methods);
         return $this->only($methods);
     }
 
-    public function group($callback): Router
+    public function group($callback): FacadeRoute
     {
         $callback();
         $this->basePath = $this->lastBasePath;
@@ -184,11 +191,6 @@ class Router
     public function any($uri, $action = null): Route
     {
         return $this->addRoute($uri, $action, self::$verbs);
-    }
-
-    public function dispatch()
-    {
-    
     }
 
     public function run($requestUri, $requestMethod)

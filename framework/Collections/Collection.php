@@ -2,15 +2,15 @@
 
 namespace PHPMini\Collections;
 
-use Exception;
 use stdClass;
+use Exception;
 
-class Collection
+class Collection implements \IteratorAggregate, \Countable
 {
-    protected $items;
+    protected array $items;
 
 
-    public function __construct($items = [])
+    public function __construct(array $items = [])
     {
         $this->items  = $items;
     }
@@ -87,7 +87,6 @@ class Collection
             $k = array_key_first($items);
             return $items[$k];
         }
-
         foreach ($items as $key => $value) {
             if ($callback($value, $key)) {
                 return $value;
@@ -122,6 +121,33 @@ class Collection
         }
 
         return value($default);
+    }
+
+    public function set($key, $value)
+    {
+        $this->items[$key] = $value;
+    }
+
+    public function map(callable $callback)
+    {
+        return new static(array_map($callback, $this->items));
+    }
+
+    public function each(callable $callback)
+    {
+        foreach ($this->items as $key => $value) {
+            $callback($value, $key);
+        }
+    }
+
+    public function reduce(callable $callback, $initial = null)
+    {
+        return new static(array_reduce($this->items, $callback, $initial));
+    }
+
+    public function transform(callable $callback)
+    {
+        $this->items = array_map($callback, $this->items);
     }
 
     public function has($key)
@@ -180,7 +206,7 @@ class Collection
 
         return $this->first(array_reverse($this->items, true), $callback, $default);
     }
-    public function count()
+    public function count(): int
     {
         return count($this->items);
     }
@@ -194,15 +220,12 @@ class Collection
         return $this;
     }
 
-    public function concat($source)
+    public function concat(array ...$sources)
     {
-        $result = new static($this);
+        $results = array_merge($this->items, ...$sources);
 
-        foreach ($source as $item) {
-            $result->push($item);
-        }
 
-        return $result;
+        return new static($results);
     }
 
     public function replace($items)
@@ -257,6 +280,8 @@ class Collection
         return $this->slice(0, $limit);
     }
 
+
+
     public function values()
     {
         return new static(array_values($this->items));
@@ -267,5 +292,10 @@ class Collection
         $this->items[] = $item;
 
         return $this;
+    }
+
+    public function getIterator(): \ArrayIterator
+    {
+        return new \ArrayIterator($this->items);
     }
 }

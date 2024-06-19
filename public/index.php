@@ -1,16 +1,29 @@
 <?php
 
-define('VIEWS', dirname(__DIR__) . DIRECTORY_SEPARATOR . 'resources' .  DIRECTORY_SEPARATOR . 'views' . DIRECTORY_SEPARATOR);
-define('SCRIPTS', dirname(__DIR__) . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR);
+use App\Http\Kernel;
+use PHPMini\Requests\Request;
 
+ini_set("display_errors", 1);
 
-require '../vendor/autoload.php';
-$dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
-$dotenv->load();
+/**
+ * ------------------------------------------------------------------------
+ * Register the Auto Loader
+ * ------------------------------------------------------------------------
+ * 
+ */
+require __DIR__ . '/../vendor/autoload.php';
 
+/**
+ * ------------------------------------------------------------------------
+ * Run the Application
+ * ------------------------------------------------------------------------
+ * 
+ * 
+ */
 
+$app = require_once __DIR__ . '/../bootstrap/app.php';
+$router = require __DIR__ . '/../routes/web.php';
 
-$app = require "../bootstrap/app.php";
+$kernel = $app->make(Kernel::class, ["app" => $app, "router" => $router]);
 
-
-$app->run();
+$kernel->handle(new Request);

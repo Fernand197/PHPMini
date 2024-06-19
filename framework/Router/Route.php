@@ -2,6 +2,7 @@
 
 namespace PHPMini\Router;
 
+use PHPMini\Container\Container;
 use PHPMini\Requests\Request;
 use ReflectionException;
 use ReflectionFunction;
@@ -20,9 +21,12 @@ class Route
     public $method;
     public $methods;
 
+    public $container;
+
     public function __construct($methods, $uri, $action)
     {
         $this->uri = $uri;
+        $this->container = Container::getInstance();
         $this->methods = (array) $methods;
         $this->action = $this->parseAction($action);
     }
@@ -41,26 +45,16 @@ class Route
                 preg_match($pathToMatch, $this->uri, $keys);
                 array_shift($keys);
                 foreach ($keys as $k => $key) {
-                    $n = $key;
                     $key = trim($key, '{}');
-                    // view if it is a model we want to inject in how controller
-                    $name = explode($n, $this->uri)[0];
-                    $parameters = null;
-                    if(str_contains($name, $key)){
-                        $model = ucfirst($key);
-                        $model = "App\\Models\\$model";
-                        $parameters = $model::findOrFail($matches[$k]);
-                    }else {
-                        $parameters = $matches[$k];
-                    }
-                    
+                    $parameters = $matches[$k];
+
                     $this->parameters[$key] = $parameters;
                 }
             }
 
             return true;
         }
-    
+
         return false;
     }
 
@@ -68,7 +62,7 @@ class Route
     {
         return is_string($this->action['uses']);
     }
-    
+
     /**
      * @throws ReflectionException
      */
@@ -76,33 +70,17 @@ class Route
     {
         $controller = $this->getController();
         $method = $this->getControllerMethod();
-        $params = array_values($this->parameters);
-        $r = new ReflectionMethod($controller, $method);
-        if ($r->getNumberOfParameters() > 0) {
-            $p = $r->getParameters()[0];
-            if (!is_null($p->getType()) && $p->getType()->getName() === Request::class) {
-                array_unshift($params, new Request());
-            }
-        }
-        return (new $controller())->$method(...$params);
+        $this->container->call("{$controller}@{$method}", $this->parameters);
     }
-    
+
     /**
      * @throws ReflectionException
      */
     public function runCallable()
     {
         $callable = $this->action['uses'];
-        $params = array_values($this->parameters);
-        $r = new ReflectionFunction($callable);
-        if ($r->getNumberOfParameters() > 0) {
-            $p = $r->getParameters()[0];
-            // var_dump($params);
-            if ($p->getType() !== null && ($p->getType()->getName() === Request::class)) {
-                array_unshift($params, new Request());
-            }
-        }
-        return $callable(...$params);
+
+        $this->container->call($callable, $this->parameters);
     }
 
     public function parseAction($action): array
@@ -113,7 +91,7 @@ class Route
                 "controller" => $action[0] . '@' . $action[1],
             ];
         }
-    
+
         return ["uses" => $action];
     }
 
@@ -182,7 +160,7 @@ class Route
     {
         return $this->methods;
     }
-    
+
     /**
      * @throws ReflectionException
      */

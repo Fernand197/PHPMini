@@ -1,7 +1,12 @@
 <?php
 
-use PHPMini\Application\Application;
 
-$router = require "../routes/api.php";
+/**
+ * -------------------------------------------------------------------
+ * Create the Application
+ * -------------------------------------------------------------------
+ * 
+ */
+$app = new PHPMini\Application\Application(dirname(__DIR__));
 
-return new Application($router);
+return $app;

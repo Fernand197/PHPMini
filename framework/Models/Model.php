@@ -41,7 +41,7 @@ class Model
         static::$sql =  "SELECT $columns FROM " . static::$table;
         return static::query();
     }
-    
+
     /**
      * @throws Exception
      */
@@ -59,7 +59,7 @@ class Model
         static::$params = [$id];
         return static::query(true);
     }
-    
+
     /**
      * @throws Exception
      */
@@ -67,15 +67,15 @@ class Model
     {
         // var_dump("hey") or die;
         $result = static::find($id, $columns);
-        if (is_null($result)) {
-            throw new Exception("Model " . static::class . " not fount");
+        if (!$result) {
+            throw new Exception(static::class . " " . $id . " not fount");
         }
         return $result;
     }
 
 
     // insert an instance in database
-    
+
     /**
      * @throws Exception
      */
@@ -139,7 +139,7 @@ class Model
         static::$sql .= " OFFSET $offset";
         return $this;
     }
-    
+
     /**
      * @throws Exception
      */
@@ -151,7 +151,7 @@ class Model
         }
         return $result;
     }
-    
+
     /**
      * @throws Exception
      */
@@ -331,12 +331,13 @@ class Model
     protected static function query(bool $single = null)
     {
         $params = static::$params;
-        static::$db = static::$db ?? new DBConnection(env('DB_CONNECTION', "mysql"),
-                env("DB_DATABASE"),
-                env("DB_HOST"),
-                env("DB_USERNAME"),
-                env("DB_PASSWORD")
-            );
+        static::$db = static::$db ?? new DBConnection(
+            env('DB_CONNECTION', "mysql"),
+            env("DB_DATABASE"),
+            env("DB_HOST"),
+            env("DB_USERNAME"),
+            env("DB_PASSWORD")
+        );
         $method = is_null($params) ? 'query' : 'prepare';
         $fetch = is_null($single) ? 'fetchAll' : 'fetch';
 
