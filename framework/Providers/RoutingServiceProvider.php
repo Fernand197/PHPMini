@@ -33,8 +33,14 @@ class RoutingServiceProvider extends ServiceProvider
     {
         $this->routes(function () {
             Route::setFacadeApplication($this->app);
+            Route::patterns([
+                "id" => "[\d]+",
+                "user" => "[\d]+",
+            ]);
             Route::loadRoutes(base_path("routes/web.php"));
-            Route::loadRoutes(base_path("routes/api.php"));
+            Route::prefix('api')->group(function () {
+                Route::loadRoutes(base_path("routes/api.php"));
+            });
         });
     }
 

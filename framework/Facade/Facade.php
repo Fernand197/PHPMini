@@ -69,7 +69,7 @@ abstract class Facade
         }
 
         if (method_exists($instance, $method)) {
-            $instance->$method(...$args);
+            return $instance->$method(...$args);
         }
     }
 }

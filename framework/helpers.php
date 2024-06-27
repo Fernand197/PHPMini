@@ -54,9 +54,13 @@ if (!function_exists('value')) {
 }
 
 if (!function_exists('app')) {
-    function app()
+    function app($key = '')
     {
-        return \PHPMini\Application\Application::getInstance();
+        $app = \PHPMini\Application\Application::getInstance();
+        if ($key) {
+            return $app->make($key);
+        }
+        return  $app;
     }
 }
 
@@ -64,5 +68,12 @@ if (!function_exists('base_path')) {
     function base_path($path = '')
     {
         return app()->basePath($path);
+    }
+}
+
+if (!function_exists('route')) {
+    function route(string $name, array $parameters = [])
+    {
+        return app()->get("router")->route($name, $parameters);
     }
 }

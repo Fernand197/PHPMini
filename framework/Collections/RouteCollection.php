@@ -59,6 +59,11 @@ class RouteCollection implements \IteratorAggregate, \Countable
         return is_null($this->getByName($name));
     }
 
+    /**
+     * Retrieves all the routes stored in the collection.
+     *
+     * @return Route[] The routes stored in the collection, in the order they were added.
+     */
     public function getRoutes()
     {
         return array_values($this->allRoutes);

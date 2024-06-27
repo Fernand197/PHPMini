@@ -40,7 +40,7 @@ class Route
      * 
      * @var array
      */
-    public $parameters;
+    public $parameters = [];
 
     /**
      * The parameter name for the route
@@ -54,6 +54,8 @@ class Route
      * @var \PHPMini\Routing\Router
      */
     protected $router;
+
+    public $wheres;
 
     /**
      * The container instance
@@ -127,6 +129,32 @@ class Route
         return $this->controller;
     }
 
+    public function where($name, $expression = null)
+    {
+        $wheres = is_array($name) ? $name : [$name => $expression];
+        foreach ($wheres as $name => $expression) {
+            $this->wheres[$name] = $expression;
+        }
+
+        return $this;
+    }
+
+    public function prefix($prefix)
+    {
+        $prefix ??= "";
+        if (!empty(trim($newPrefix = rtrim($prefix, '/') . '/' . ltrim($this->action['prefix'] ?? '', '/'), '/'))) {
+            $this->action['prefix'] = $newPrefix;
+        }
+        $uri = rtrim($prefix, '/') . '/' . ltrim($this->uri, '/');
+
+        return $this->uri ??= $uri !== '/' ? trim($uri, '/') : $uri;
+    }
+
+    public function getWhere($key)
+    {
+        return $this->wheres[$key] ?? "([^/]+)";
+    }
+
     /**
      * Check if the route matches the request
      * 
@@ -136,26 +164,68 @@ class Route
      */
     public function matches($request): bool
     {
-        $path = preg_replace('#{([\w]+)}#', '([^/]+)', $this->uri);
-        $pathToMatch = "#^$path$#";
-        if (preg_match($pathToMatch, $request->url(), $matches)) {
-            array_shift($matches);
-            if ($path === $this->uri) {
-                $this->parameters = $matches;
-            } else {
-                preg_match($pathToMatch, $this->uri, $keys);
-                array_shift($keys);
-                foreach ($keys as $k => $key) {
-                    $key = trim($key, '{}');
-                    $parameters = $matches[$k];
-                    $this->parameters[$key] = $parameters;
-                }
+        $uri = trim($this->uri, '/');
+        $newPath = trim($request->path(), '/');
+
+        preg_match_all('/{([\w]+)}/', $uri, $matches, PREG_PATTERN_ORDER);
+        foreach ($matches[1] as $k => $key) {
+            $uri = preg_replace("/{$matches[0][$k]}/", '(' . $this->getWhere($key) . ')', $uri);
+        }
+
+        if (preg_match("#^$uri$#", $newPath, $newMatches)) {
+            array_shift($newMatches);
+            foreach ($matches[1] as $k => $key) {
+                $this->parameters[$key] = $newMatches[$k];
             }
 
             return true;
         }
 
         return false;
+    }
+    public function url()
+    {
+        $parameters = $this->parameters;
+        $request = $this->router->currentRequest();
+        $path = preg_replace_callback('/{([\w]+)}/', function ($m) use (&$parameters) {
+            if (isset($parameters[$m[1]]) && ($v = $parameters[$m[1]]) !== '') {
+                unset($parameters[$m[1]]);
+                return $v;
+            } else if (isset($parameters[$m[1]])) {
+                unset($parameters[$m[1]]);
+            }
+
+            return $m[0];
+        }, $this->uri());
+
+        $path = preg_replace_callback('/{[\w]+}/', function ($matches) use (&$parameters) {
+            // dd($parameters, $m);
+            $parameters = array_merge($parameters);
+            $v = $parameters[0];
+            if (!isset($v)) {
+                return $matches[0];
+            }
+            unset($parameters[0]);
+            return $v;
+        }, $path);
+
+        if (!is_null($fragment = parse_url($path, PHP_URL_FRAGMENT))) {
+            $path = preg_replace('/#.*/', '', $path);
+        }
+
+        if (count($parameters) > 0) {
+            $query = http_build_query($s = array_filter($parameters, 'is_string', ARRAY_FILTER_USE_KEY), '', '&');
+            if (count($s) < count($parameters)) {
+                $query .= http_build_query($i = array_filter($parameters, 'is_numeric', ARRAY_FILTER_USE_KEY), '', '&');
+            }
+            $path .= !$query ? '' : "?$query";
+        }
+
+        $path .= is_null($fragment) ? "" : "#$fragment";
+
+        $path = $request->getUriForPath(rtrim(preg_replace('/\{.*\}/', '', $path), '/'));
+
+        return $path;
     }
 
     public function uri()
@@ -192,6 +262,17 @@ class Route
     public function hasName(): bool
     {
         return isset($this->action['as']);
+    }
+
+    public function setAction($action): Route
+    {
+        $this->action = $action;
+        return $this;
+    }
+
+    public function getAction()
+    {
+        return $this->action;
     }
 
     public function getName()

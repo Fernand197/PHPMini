@@ -13,8 +13,19 @@ use App\Http\Controllers\HomeController;
  *
  */
 
-Route::get('/welcome/{user}', [HomeController::class, "welcome"]);
-
+Route::get('welcome/{id}/{user}', [HomeController::class, "welcome"])->name('welcome');
+// dd($r);
+Route::prefix('admin/')->name('users.')->group(function ($router) {
+    Route::prefix('users')->group(function () {
+        Route::get('/{user}/show', function (User $user) {
+            echo "Hello World " . $user->email;
+        })->name('show')->where('user', '[\w]+');
+    });
+});
 Route::get('/{user}', function (User $user) {
     echo "Hello World " . $user->email;
+});
+
+Route::controller(HomeController::class)->group(function () {
+    Route::get("/welcome", "index")->name('welcome.index');
 });
