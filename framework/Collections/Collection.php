@@ -116,11 +116,7 @@ class Collection implements \IteratorAggregate, \Countable
 
     public function get($key, $default = null)
     {
-        if (array_key_exists($key, $this->items)) {
-            return $this->items[$key];
-        }
-
-        return value($default);
+        return $this->items[$key] ?? value($default);
     }
 
     public function set($key, $value)

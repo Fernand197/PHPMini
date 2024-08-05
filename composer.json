@@ -2,12 +2,15 @@
     "name": "fernand197/phpmini",
     "type": "project",
     "description": "The PHPMini micro-framework",
-    "keywords": ["PHPMini", "framework"],
+    "keywords": [
+        "PHPMini",
+        "framework"
+    ],
     "require": {
         "phpmailer/phpmailer": "^6.5",
         "symfony/var-dumper": "^5.4",
         "vlucas/phpdotenv": "^5.4",
-      "ext-pdo": "*"
+        "ext-pdo": "*"
     },
     "autoload": {
         "psr-4": {
@@ -24,11 +27,13 @@
             "Tests\\": "tests/"
         }
     },
-    "authors": [{
-        "name": "Fernand Tatchum",
-        "email": "tatchumf@gmail.com"
-    }],
+    "authors": [
+        {
+            "name": "Fernand Tatchum",
+            "email": "tatchumf@gmail.com"
+        }
+    ],
     "require-dev": {
-      "phpunit/phpunit": "9.5"
+        "phpunit/phpunit": "9.5"
     }
 }

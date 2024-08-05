@@ -14,7 +14,7 @@ use App\Http\Controllers\HomeController;
  */
 
 Route::get('welcome/{id}/{user}', [HomeController::class, "welcome"])->name('welcome');
-// dd($r);
+
 Route::prefix('admin/')->name('users.')->group(function ($router) {
     Route::prefix('users')->group(function () {
         Route::get('/{user}/show', function (User $user) {

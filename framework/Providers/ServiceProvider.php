@@ -2,6 +2,11 @@
 
 namespace PHPMini\Providers;
 
+/**
+ * @property array $bindings The list of bindings classes
+ * 
+ * @property array $singletons The list of singletons bindings classes
+ */
 abstract class ServiceProvider
 {
     /**

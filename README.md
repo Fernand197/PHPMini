@@ -65,11 +65,11 @@ The methods take 2 parameters: **uri** and **action**. **uri** must be a string 
 array or a callable.
 
 ```php
-$router->get("/welcome", "App\Http\Controllers\HomeController@welcome");
+Route::get("/welcome", "App\Http\Controllers\HomeController@welcome");
 
-$router->get("/welcome", [HomeController::class, "welcome"]);
+Route::get("/welcome", [HomeController::class, "welcome"]);
 
-$router->get("/welcome", function(){
+Route::get("/welcome", function(){
     echo "Hello World";
 });
 
@@ -80,32 +80,12 @@ $router->get("/welcome", function(){
 api routes are defined like web routes but in **routes/api.php**
 
 ```php
-$router->api()->group(function () use ($router){
-    # define yours api routes here!
-    
-    // the uri of this route will be "/api/welcome"
-    $router->get("/welcome", function() {
-        echo "welcome"
-    });
-})
+// the uri of this route will be "/api/welcome"
+Route::get("/welcome", function() {
+    echo "welcome"
+});
 ```
 
-you can change the base name of your api routes like this.
-
-```php
-$router->api("your_basename_api_route")
-
-
-// exemple
-$router->api("apiV2")->group(function () use ($router){
-    # define yours api routes here!
-    
-    // the uri of this route will be "/apiV2/welcome"
-    $router->get("/welcome", function() {
-        echo "welcome"
-    });
-})
-```
 
 You can define route with parameters  
 Parameter can be a regular expression, a primary key for a model or just a simple parameter.  
@@ -113,12 +93,12 @@ The number of parameters correspond to the number of parameters passed in the ca
 
 ```php
 // uri here can be "/welcome/john" 
-$router->get("/welcome/{name}", function($name){
+Route::get("/welcome/{name}", function($name){
     echo "Welcome " . $name;
 });
 
 // uri here can be "users/1"
-$router->get("/users/{id}", function($id){
+Route::get("/users/{id}", function($id){
     echo "ID : " . $id
 });
 
@@ -128,20 +108,20 @@ this primary key is casted in the callable or in the controller
 method to the User model corresponding to that 
 primary key
 */
-$router->get("/users/{user}", function(User $user){
+Route::get("/users/{user}", function(User $user){
     var_dump($user);
 });
 
 // param here can only be digit
-$router->get("/user/(\d+)", function(User $user){
+Route::get("/user/{user}", function(User $user){
     var_dump($user);
-});
+})->where('user', '(\d+)');
 
 ```
-By default Request are dispatched in callable and in the controller method.
+You can access request objet using dependency injection.
 
 ```php
-$router->get("/welcome", function(Request $request){
+Route::get("/welcome", function(Request $request){
     var_dump($request);
 });
 
@@ -151,18 +131,18 @@ public function welcome(Request $request){
 }
 ```
 
-* Scoped routes
+* Prefix routes
 
 You can define routes that have the same sub-uri like this.
 
 ```php
-$router->scope("/users")->group(function() use ($router) {
+Route::prefix("/users")->group(function() use ($router) {
 
     // uri here is "/users/{user}"
-    $router->get("{user}", [UserController::class, "show"]);
+    Route::get("{user}", [UserController::class, "show"]);
 
     // uri here is "/users/{user}/posts/{post}"
-    $router->get("{user}/posts/{post}", [UserController::class, "show"]);
+    Route::get("{user}/posts/{post}", [UserController::class, "show"]);
 });
 ```
 
@@ -171,13 +151,13 @@ $router->scope("/users")->group(function() use ($router) {
 They are uses to define routes that based the same controller.
 
 ```php
-$router->controller(UserController::class)->group(function() use ($router){
+Route::controller(UserController::class)->group(function() use ($router){
     
-    $router->get("/users", "index");
-    $router->post("/users", "store");
-    $router->get("/users/{user}", "show");
-    $router->patch("/users/{user}", "update");
-    $router->delete("/users/{user}", "delete");
+    Route::get("/users", "index");
+    Route::post("/users", "store");
+    Route::get("/users/{user}", "show");
+    Route::patch("/users/{user}", "update");
+    Route::delete("/users/{user}", "delete");
 })
 ```
 
@@ -188,33 +168,33 @@ and **delete**. It takes 2 params: an **uri** and a **controller**
 
 ```php
 // define routes with these all methods
-$router->resource("/users", User::class)->all();
+Route::resource("/users", User::class)->all();
 
      // execution code behind
-    $router->get("/users", "index");
-    $router->post("/users", "store");
-    $router->get("/users/create", "create");
-    $router->get("/users/{user}", "show");
-    $router->patch("/users/{user}", "update");
-    $router->get("/users/{user}/edit", "edit");
-    $router->delete("/users/{user}", "delete");
+    Route::get("/users", "index");
+    Route::post("/users", "store");
+    Route::get("/users/create", "create");
+    Route::get("/users/{user}", "show");
+    Route::patch("/users/{user}", "update");
+    Route::get("/users/{user}/edit", "edit");
+    Route::delete("/users/{user}", "delete");
 
 // define routes with only index and show methods
-$router->resource("/users", User::class)->only(["index", "show"]);
+Route::resource("/users", User::class)->only(["index", "show"]);
 
-    // excution code behind
-    $router->get("/users", "index");    
-    $router->get("/users/{user}", "show");
+    // execution code behind
+    Route::get("/users", "index");    
+    Route::get("/users/{user}", "show");
 
 //define routes with all methods except index and show
-$router->resource("/users", User::class)->except(["index", "show"]);
+Route::resource("/users", User::class)->except(["index", "show"]);
 
-    // excution code behind
-    $router->post("/users", "store");
-    $router->get("/users/create", "create");
-    $router->patch("/users/{user}", "update");
-    $router->get("/users/{user}/edit", "edit");
-    $router->delete("/users/{user}", "delete");
+    // execution code behind
+    Route::post("/users", "store");
+    Route::get("/users/create", "create");
+    Route::patch("/users/{user}", "update");
+    Route::get("/users/{user}/edit", "edit");
+    Route::delete("/users/{user}", "delete");
 
 ```
 
@@ -224,7 +204,7 @@ define routes for an api. It is same like resources routes but don't implement r
 **edit**.
 
 ```php
-$router->apiResource("/users", UserConstroller::class);
+Route::apiResource("/users", UserConstroller::class);
 ```
 
 * Apis resources routes
@@ -232,7 +212,7 @@ $router->apiResource("/users", UserConstroller::class);
 To create multiple api resources routes
 
 ```php
-$router->apiResources([
+Route::apiResources([
     "/posts" => PostController::class,
     "/users" => User::controller::class
 ]);
@@ -286,7 +266,7 @@ View files are located in the **resources/views** directory
 
 ```php
 // in route
-$router->get("/welcome", function(){
+Route::get("/welcome", function(){
     return view("welcome");
 })
 
@@ -301,7 +281,7 @@ public function show()
 
 ```php
 // in route
-$router->get("/welcome", function(){
+Route::get("/welcome", function(){
     $username = "John";
     return view("welcome", compact("username"));
 })
